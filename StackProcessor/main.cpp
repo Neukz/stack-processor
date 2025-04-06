@@ -1,8 +1,6 @@
 #include <iostream>
 
-using namespace std;
-
-const int MAX_CHARS = 20000;
+const int MAX_PROGRAM_LENGTH = 20000;
 
 struct Node {
 	char data;
@@ -15,7 +13,7 @@ private:
 		if (node == nullptr) {
 			return;
 		}
-		cout << node->data;
+		std::cout << node->data;
 		print(node->next);
 	}
 
@@ -47,6 +45,14 @@ private:
 		}
 		value += (node->data - '0') * multiplier;
 		return toInt(node->next, value, multiplier * 10);
+	}
+
+	LinkedList* toAsciiList(LinkedList* list, int ascii) {
+		if (ascii <= 0) {
+			return list;
+		}
+		list->addLast(new Node{ (char)('0' + ascii % 10) });
+		return toAsciiList(list, ascii / 10);
 	}
 
 	LinkedList* copy(Node* node) {
@@ -103,6 +109,10 @@ public:
 		return toInt(head, 0, 1);
 	}
 
+	LinkedList* toAsciiList() {
+		return toAsciiList(new LinkedList(), (int)head->data);
+	}
+
 	LinkedList* copy() {
 		return copy(head);
 	}
@@ -135,9 +145,9 @@ private:
 			return;
 		}
 		print(element->next, index + 1);
-		cout << index << ": ";
+		std::cout << index << ": ";
 		element->list->print();
-		cout << endl;
+		std::cout << std::endl;
 	}
 
 public:
@@ -166,12 +176,9 @@ public:
 class StackProcessor {
 private:
 	Stack* stack;
-	char program[MAX_CHARS];
+	char program[MAX_PROGRAM_LENGTH];
 	int programLength;
-	char input[MAX_CHARS];
-	int inputLength;
 	int instructionPointer;
-	int inputPointer;
 
 	LinkedList* copyListAt(int index) {
 		if (index == 0) {
@@ -187,25 +194,15 @@ private:
 	}
 
 public:
-	StackProcessor() : stack(new Stack()), programLength(0), inputLength(0), instructionPointer(0), inputPointer(0) {}
+	StackProcessor() : stack(new Stack()), programLength(0), instructionPointer(0) {}
 
 	void loadProgram() {
-		while (programLength < MAX_CHARS) {
-			char instruction = cin.get();
+		while (programLength < MAX_PROGRAM_LENGTH) {
+			char instruction = std::cin.get();
 			if (instruction == '\n') {
 				break;
 			}
 			program[programLength++] = instruction;
-		}
-	}
-
-	void loadInput() {
-		while (inputLength < MAX_CHARS) {
-			char character = cin.get();
-			if (character == '\n') {
-				break;
-			}
-			input[inputLength++] = character;
 		}
 	}
 
@@ -244,24 +241,53 @@ public:
 			}
 			case '@':
 			{
-				LinkedList* topList = stack->pop()->list;
-				int targetListIndex = topList->toInt();
+				int targetListIndex = stack->pop()->list->toInt();
 				LinkedList* targetList = copyListAt(targetListIndex);
 				stack->push(targetList);
 				break;
 			}
 			case '.':
 			{
+				char input;
+				std::cin >> input;
 				LinkedList* topList = stack->pop()->list;
-				topList->addFirst(new Node{ input[inputPointer++] });
+				topList->addFirst(new Node{ input });
 				stack->push(topList);
 				break;
 			}
 			case '>':
 			{
-				cout << stack->pop()->list->head->data;
+				StackElement* topElement = stack->pop();
+				if (topElement != nullptr) {
+					std::cout << topElement->list->head->data;
+				}
 				break;
 			}
+			//case '!':
+			//{
+			//	// TODO
+			//	break;
+			//}
+			//case '<':
+			//{
+			//	// TODO
+			//	break;
+			//}
+			//case '=':
+			//{
+			//	// TODO
+			//	break;
+			//}
+			//case '~':
+			//{
+			//	// TODO
+			//	break;
+			//}
+			//case '?':
+			//{
+			//	// TODO
+			//	break;
+			//}
 			case '-':
 			{
 				LinkedList* topList = stack->pop()->list;
@@ -284,58 +310,56 @@ public:
 				stack->push(topList);
 				break;
 			}
-			/*case '!':
+			case '$':
 			{
 				LinkedList* topList = stack->pop()->list;
+				Node* firstNode = topList->head;
+				topList->removeFirst();
+				stack->push(topList);
 				LinkedList* newTopList = new LinkedList();
-				if (topList->isEmpty(topList->head) || topList->head->data == '0') {
-					newTopList->addFirst(new Node{ '1' });
-				} else {
-					newTopList->addFirst(new Node{ '0' });
-				}
+				newTopList->addFirst(firstNode);
 				stack->push(newTopList);
 				break;
 			}
-			case '<':
+			case '#':
 			{
 				LinkedList* upperList = stack->pop()->list;
 				LinkedList* lowerList = stack->pop()->list;
-				int a = upperList->toInt(upperList->head, 0, 1);
-				int b = lowerList->toInt(lowerList->head, 0, 1);
-				LinkedList* newTopList = new LinkedList();
-				if (a > b) {
-					newTopList->addFirst(new Node{ '1' });
-				} else {
-					newTopList->addFirst(new Node{ '0' });
-				}
-				stack->push(newTopList);
+				lowerList->getLast()->next = upperList->head;
+				stack->push(lowerList);
 				break;
 			}
-			case '=':
-			{
-				LinkedList* upperList = stack->pop()->list;
-				LinkedList* lowerList = stack->pop()->list;
-				int a = upperList->toInt(upperList->head, 0, 1);
-				int b = lowerList->toInt(lowerList->head, 0, 1);
-				LinkedList* newTopList = new LinkedList();
-				if (a == b) {
-					newTopList->addFirst(new Node{ '1' });
-				} else {
-					newTopList->addFirst(new Node{ '0' });
-				}
-				stack->push(newTopList);
-				break;
-			}*/
+			//case '+':
+			//{
+			//	// TODO
+			//	break;
+			//}
 			case '&':
 			{
 				stack->print();
 				break;
 			}
+			case ']':
+			{
+				int ascii = stack->pop()->list->toInt();
+				LinkedList* newTopList = new LinkedList();
+				newTopList->addFirst(new Node{ (char)ascii });
+				stack->push(newTopList);
+				break;
+			}
+			case '[':
+			{
+				LinkedList* asciiList = stack->pop()->list->toAsciiList();
+				stack->push(asciiList);
+				break;
+			}
 			default:
 			{
-				LinkedList* topList = stack->pop()->list;
-				topList->addFirst(new Node{ instruction });
-				stack->push(topList);
+				StackElement* topElement = stack->pop();
+				if (topElement != nullptr) {
+					topElement->list->addFirst(new Node{ instruction });
+					stack->push(topElement->list);
+				}
 			}
 		}
 
@@ -347,6 +371,5 @@ public:
 int main() {
 	StackProcessor processor;
 	processor.loadProgram();
-	processor.loadInput();
 	processor.execute();
 }

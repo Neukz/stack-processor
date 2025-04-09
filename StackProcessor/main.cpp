@@ -28,7 +28,7 @@ private:
         std::cout << node->data;
         print(node->next);
     }
-    
+
     int getLength(Node* node) {
         if (node == nullptr) {
             return 0;
@@ -80,24 +80,37 @@ private:
     }
 
     void dropLeadingZeros(Node* node) {
-        if (node->data == '-') {    // Preserve '-'
-            return dropLeadingZeros(node->prev);
+        if (node != nullptr) {
+            if (node->data == '-') {    // Preserve '-'
+                return dropLeadingZeros(node->prev);
+            }
+            if (node->prev == nullptr || node->data != '0') {
+                return;
+            }
+            // Drop the node with 0
+            node->prev->next = node->next;
+            if (node->next != nullptr) {
+                node->next->prev = node->prev;
+            }
+            dropLeadingZeros(node->prev);
         }
-        if (node->prev == nullptr || node->data != '0') {
+    }
+
+    void fillLeadingZeros(int number) {
+        if (number == 0) {
             return;
         }
-        // Drop the node with 0
-        node->prev->next = node->next;
-        if (node->next != nullptr) {
-            node->next->prev = node->prev;
-        }
-        dropLeadingZeros(node->prev);
+        addLast(new Node{ '0' });
+        fillLeadingZeros(number - 1);
     }
 
     bool isZero() {
         // 0 or 0-
-        return (head->data == '0' && head->next == nullptr)
-            || (head->data == '0' && head->next->data == '-' && head->next->next == nullptr);
+        if (head != nullptr) {
+            return (head->data == '0' && head->next == nullptr)
+                || (head->data == '0' && head->next->data == '-' && head->next->next == nullptr);
+        }
+        return false;
     }
 
     bool isNegative() {
@@ -122,6 +135,32 @@ private:
             return true;
         }
         return lessThan(own->next, other->next);
+    }
+
+    List* addition(List* sumList, Node* own, Node* other, int remainder) {
+        if (own == nullptr && other == nullptr) {
+            if (remainder > 0) {
+                sumList->addLast(new Node{ (char)('0' + remainder) });
+            }
+            return sumList;
+        }
+        int sum = (own->data - '0') + (other->data - '0') + remainder;
+        int digit = sum % 10;
+        sumList->addLast(new Node{ (char)('0' + digit) });
+        return addition(sumList, own->next, other->next, sum / 10);
+    }
+
+    List* subtraction(List* diffList, Node* own, Node* other) {
+        if (own == nullptr && other == nullptr) {
+            return diffList;
+        }
+        int diff = (own->data - '0') - (other->data - '0');
+        if (diff < 0) { // Borrow 10 from more significant digit
+            diff += 10;
+            own->next->data--;
+        }
+        diffList->addLast(new Node{ (char)('0' + diff) });
+        return subtraction(diffList, own->next, other->next);
     }
 
 public:
@@ -211,12 +250,12 @@ public:
         List* thisCopy = this->copy();
         thisCopy->dropLeadingZeros(thisCopy->getLast());
         int thisLength = thisCopy->getLength();
-        int thisNegative = thisCopy->isNegative();
+        bool thisNegative = thisCopy->isNegative();
 
         List* otherCopy = other->copy();
         thisCopy->dropLeadingZeros(otherCopy->getLast());
         int otherLength = otherCopy->getLength();
-        int otherNegative = otherCopy->isNegative();
+        bool otherNegative = otherCopy->isNegative();
 
         if (thisCopy->isZero() && otherCopy->isZero()) {
             return false;
@@ -234,6 +273,63 @@ public:
             return thisLength < otherLength;    // Positive with smaller length is smaller
         }
         return lessThan(thisCopy->head, otherCopy->head);
+    }
+
+    List* addition(List* other) {
+        List* thisCopy = this->copy();
+        bool thisNegative = thisCopy->isNegative();
+        bool thisNegated = false;
+
+        List* otherCopy = other->copy();
+        bool otherNegative = otherCopy->isNegative();
+        bool otherNegated = false;
+
+        // Ignore negative signs
+        if (thisNegative) {
+            thisCopy->removeLast();
+            thisNegated = true;
+        }
+        if (otherNegative) {
+            otherCopy->removeLast();
+            otherNegated = true;
+        }
+
+        // Fill the shorter number with leading zeros
+        int lengthDiff = thisCopy->getLength() - otherCopy->getLength();
+        if (lengthDiff > 0) {
+            otherCopy->fillLeadingZeros(lengthDiff);
+        } else if (lengthDiff < 0) {
+            thisCopy->fillLeadingZeros(0 - lengthDiff);
+        }
+
+        // For numbers of the same sign - perform addition
+        List* sumList = new List();
+        if (!thisNegative && !otherNegative) {
+            sumList = addition(sumList, thisCopy->head, otherCopy->head, 0);
+        } else if (thisNegative && otherNegative) {
+            sumList = addition(sumList, thisCopy->head, otherCopy->head, 0);
+            sumList->addLast(new Node{ '-' }); // Restore '-'
+
+            // For numbers of opposite signs - perform subtraction
+            // Always subtract the smaller absolute value from the bigger one
+        } else if (thisCopy->lessThan(otherCopy)) {
+            sumList = subtraction(sumList, otherCopy->head, thisCopy->head);
+            if (otherNegated) {
+                sumList->addLast(new Node{ '-' });
+            }
+        } else {
+            sumList = subtraction(sumList, thisCopy->head, otherCopy->head);
+            if (thisNegated) {
+                sumList->addLast(new Node{ '-' });
+            }
+        }
+
+        sumList->dropLeadingZeros(sumList->getLast());
+        // Format 0- to 0
+        if (sumList->isZero() && sumList->isNegative()) {
+            sumList->removeLast();
+        }
+        return sumList;
     }
 };
 
@@ -397,12 +493,12 @@ public:
             }
             case '<':
             {
-                    List* listA = stack->pop()->list;
-                    List* listB = stack->pop()->list;
-                    List* newTopList = new List();
-                    newTopList->addFirst(new Node{ listB->lessThan(listA) ? '1' : '0'});
-                    stack->push(newTopList);
-                    break;
+                List* listA = stack->pop()->list;
+                List* listB = stack->pop()->list;
+                List* newTopList = new List();
+                newTopList->addFirst(new Node{ listB->lessThan(listA) ? '1' : '0' });
+                stack->push(newTopList);
+                break;
             }
             case '=':
             {
@@ -421,13 +517,13 @@ public:
             }
             case '?':
             {
-                    int t = stack->pop()->list->toInt();
-                    List* listW = stack->pop()->list;
-                    if (listW->head != nullptr && !(listW->head->data == '0' && listW->head->next == nullptr)) {
-                            instructionPointer = t;
-                            return execute();
-                    }
-                    break;
+                int t = stack->pop()->list->toInt();
+                List* listW = stack->pop()->list;
+                if (listW->head != nullptr && !(listW->head->data == '0' && listW->head->next == nullptr)) {
+                    instructionPointer = t;
+                    return execute();
+                }
+                break;
             }
             case '-':
             {
@@ -472,11 +568,14 @@ public:
                 stack->push(lowerList);
                 break;
             }
-            //case '+':
-            //{
-            //      // TODO
-            //      break;
-            //}
+            case '+':
+            {
+                List* listA = stack->pop()->list;
+                List* listB = stack->pop()->list;
+                List* sumList = listA->addition(listB);
+                stack->push(sumList);
+                break;
+            }
             case '&':
             {
                 stack->print();

@@ -37,10 +37,12 @@ int List::handleGetLength(Node* node) {
 
 void List::handleRemoveLast(Node* node) {
     if (node == nullptr || node->next == nullptr) {
+        delete node;
         head = nullptr;
         return;
     }
     if (node->next->next == nullptr) {
+        delete node->next;
         node->next = nullptr;
         return;
     }
@@ -131,6 +133,7 @@ void List::dropLeadingZeros(Node* node) {
             node->next->prev = node->prev;
         }
         dropLeadingZeros(node->prev);
+        delete node;
     }
 }
 
@@ -218,14 +221,14 @@ int List::toInt() {
 List* List::copy() {
     return handleCopy(head);
 }
-
+ 
 bool List::equals(List* other) {
     List* thisCopy = this->copy();
     thisCopy->dropLeadingZeros(thisCopy->getTail());
     int thisLength = thisCopy->getLength();
 
     List* otherCopy = other->copy();
-    thisCopy->dropLeadingZeros(otherCopy->getTail());
+    otherCopy->dropLeadingZeros(otherCopy->getTail());
     int otherLength = otherCopy->getLength();
 
     if (thisCopy->isZero() && otherCopy->isZero()) {    // Check for 0 = 0-
@@ -244,7 +247,7 @@ bool List::lessThan(List* other) {
     bool thisNegative = thisCopy->isNegative();
 
     List* otherCopy = other->copy();
-    thisCopy->dropLeadingZeros(otherCopy->getTail());
+    otherCopy->dropLeadingZeros(otherCopy->getTail());
     int otherLength = otherCopy->getLength();
     bool otherNegative = otherCopy->isNegative();
 

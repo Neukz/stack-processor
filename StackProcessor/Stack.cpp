@@ -30,18 +30,18 @@ void Stack::handlePrint(Element* element, int index) {
 Stack::Stack() : top(nullptr) {};
 
 void Stack::push(List* newList) {
-    Element* newElement = new Element;
-    newElement->list = newList;
-    addFirst(newElement);
+    addFirst(new Element{ newList });
 }
 
-Element* Stack::pop() {
+List* Stack::pop() {
     if (top == nullptr) {
         return nullptr;
     }
     Element* topElement = top;
+    List* topList = top->list;
     removeFirst();
-    return topElement;
+    delete topElement;
+    return topList;
 }
 
 void Stack::print() {

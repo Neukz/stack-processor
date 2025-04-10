@@ -18,6 +18,6 @@ public:
     Stack();
 
     void push(List* newList);
-    Element* pop();
+    List* pop();
     void print();
 };

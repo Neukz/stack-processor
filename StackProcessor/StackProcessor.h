@@ -5,7 +5,7 @@ class StackProcessor {
 private:
     static const int MAX_PROGRAM_LENGTH = 20000;
 
-    Stack* stack;
+    Stack stack;
     char program[MAX_PROGRAM_LENGTH];
     int programLength;
     int instructionPointer;

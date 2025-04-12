@@ -3,7 +3,7 @@
 
 #pragma region Private methods
 List* StackProcessor::copyListAt(int index) {
-    if (index == 0) {   // Found
+    if (index == 0) {   // Found the target list
         List* targetList = stack.pop();
         List* copiedList = targetList->copy();
         stack.push(targetList);

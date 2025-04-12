@@ -36,7 +36,7 @@ int List::handleGetLength(Node* node) {
 }
 
 void List::handleRemoveLast(Node* node) {
-    if (node == nullptr || node->next == nullptr) {
+    if (node == nullptr || node->next == nullptr) { // 0 or 1 element
         delete node;
         head = nullptr;
         return;
@@ -94,7 +94,7 @@ bool List::handleLessThan(Node* own, Node* other) {
 }
 
 List* List::handleAddition(List* sumList, Node* own, Node* other, int remainder) {
-    if (own == nullptr && other == nullptr) {
+    if (own == nullptr && other == nullptr) {   // Both are empty or reached the end
         if (remainder > 0) {
             sumList->addLast(new Node{ (char)('0' + remainder) });
         }
@@ -107,7 +107,7 @@ List* List::handleAddition(List* sumList, Node* own, Node* other, int remainder)
 }
 
 List* List::handleSubtraction(List* diffList, Node* own, Node* other) {
-    if (own == nullptr && other == nullptr) {
+    if (own == nullptr && other == nullptr) {   // Both are empty or reached the end
         return diffList;
     }
     int diff = (own->data - '0') - (other->data - '0');
@@ -124,7 +124,7 @@ void List::dropLeadingZeros(Node* node) {
         if (node->data == '-') {    // Preserve '-'
             return dropLeadingZeros(node->prev);
         }
-        if (node->prev == nullptr || node->data != '0') {
+        if (node->prev == nullptr || node->data != '0') {   // Reached the end or found non-zero digit
             return;
         }
         // Drop the node with 0
@@ -223,6 +223,7 @@ List* List::copy() {
 }
  
 bool List::equals(List* other) {
+    // Create copies to prevent changing the original object
     List* thisCopy = this->copy();
     thisCopy->dropLeadingZeros(thisCopy->getTail());
     int thisLength = thisCopy->getLength();
@@ -241,6 +242,7 @@ bool List::equals(List* other) {
 }
 
 bool List::lessThan(List* other) {
+    // Create copies to prevent changing the original object
     List* thisCopy = this->copy();
     thisCopy->dropLeadingZeros(thisCopy->getTail());
     int thisLength = thisCopy->getLength();
@@ -251,7 +253,7 @@ bool List::lessThan(List* other) {
     int otherLength = otherCopy->getLength();
     bool otherNegative = otherCopy->isNegative();
 
-    if (thisCopy->isZero() && otherCopy->isZero()) {
+    if (thisCopy->isZero() && otherCopy->isZero()) {    // Check for 0 = 0-
         return false;
     }
     if (!thisNegative && otherNegative) {
@@ -270,6 +272,7 @@ bool List::lessThan(List* other) {
 }
 
 List* List::addition(List* other) {
+    // Create copies to prevent changing the original object
     List* thisCopy = this->copy();
     bool thisNegative = thisCopy->isNegative();
     bool thisNegated = false;
@@ -278,7 +281,7 @@ List* List::addition(List* other) {
     bool otherNegative = otherCopy->isNegative();
     bool otherNegated = false;
 
-    // Ignore negative signs
+    // Ignore negative signs for the purpose of addition/subtraction
     if (thisNegative) {
         thisCopy->removeLast();
         thisNegated = true;
